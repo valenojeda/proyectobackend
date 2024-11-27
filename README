@@ -1,0 +1,60 @@
+Backend
+Este proyecto es un servidor construido con Node.js y Express que ofrece múltiples endpoints para manejar categorías, productos, carritos y datos de usuarios.
+
+-Requisitos previos
+Antes de comenzar, asegúrate de tener instalados los siguientes elementos:
+
+Node.js
+npm (se incluye con Node.js)
+
+-Instala las dependencias:
+
+bash
+npm install
+
+-Levantar el servidor
+
+Ejecuta el siguiente comando para iniciar el servidor:
+
+bash
+node index.js
+
+El servidor se ejecutará en http://localhost:3000.
+
+-Verifica en la terminal que el mensaje aparezca:
+
+http://localhost:3000
+
+
+Verificar peticiones
+El servidor expone las siguientes rutas que puedes probar usando herramientas como Postman:
+
+Categorías
+GET http://localhost:3000/categories
+Obtiene todas las categorías.
+
+GET http://localhost:3000/categories/:id
+Obtiene una categoría específica por ID.
+
+Productos
+GET http://localhost:3000/products/:id
+Obtiene los detalles de un producto por ID.
+
+GET http://localhost:3000/catProducts/:id
+Obtiene productos de una categoría específica.
+
+Carrito de compras
+GET http://localhost:3000/cart
+Obtiene la información general del carrito.
+
+GET http://localhost:3000/cart/:id
+Obtiene un mensaje personalizado con el ID del carrito.
+
+Usuario y carrito
+GET http://localhost:3000/user_cart
+Obtiene toda la información del carrito del usuario.
+
+Ventas
+GET http://localhost:3000/sell
+Obtiene la información general de ventas.
+
