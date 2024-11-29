@@ -5,6 +5,21 @@ const app = express();
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const jwt = require("jsonwebtoken");
+const cors = require("cors");
+const SECRET_KEY = "CLAVE SECRETA";
+
+// Habilitar CORS para permitir peticiones desde otros orígenes
+app.use(cors());
+
+// Parsear el cuerpo de las peticiones como JSON
+app.use(express.json());
+
+// Ruta al archivo cart.json
+const cartFilePath = path.join(__dirname, 'cart.json');
+
+// Ruta a la carpeta de productos
+const productsFolderPath = path.join(__dirname, 'products');
 
 app.get('/', (req, res) =>{
     res.send("Backend Proyecto Final")
@@ -32,6 +47,94 @@ const writeData = (data) => {
         console.log(error);
     }
 }
+
+// Middleware para verificar el token
+const authenticateToken = (req, res, next) => {
+    // Obtener el header de autorización (donde se encuentra el token)
+    const authHeader = req.headers['authorization'];
+    // Extraemos el token del encabezado (En el formato "Bearer token")
+    const token = authHeader && authHeader.split(' ')[1];
+
+    // Si no hay token, devolvemos un error de "Unauthorized"
+    if (!token) {
+        return res.status(401).json({ message: 'Token no proporcionado' });
+    }
+
+    // Verificamos si el token es válido usando la librería 'jsonwebtoken'
+    jwt.verify(token, SECRET_KEY, (err, user) => {
+        if (err) {
+            return res.status(403).json({ message: 'Token inválido o expirado' });
+        }
+        // Si el token es válido, añadimos la información del usuario a la solicitud (req.user)
+        req.user = user;
+        next();
+    });
+};
+
+// Login
+app.post("/login", (req, res) => {
+    const { username, password } = req.body;
+    if ( username && password ) {
+      const token = jwt.sign({ username }, SECRET_KEY);
+      res.status(200).json({ token });
+
+    } else {
+      res.status(401).json({ message: "Usuario y/o contraseña incorrecto" });
+    }
+});
+
+app.get('/ecommerce-data', authenticateToken, (req, res) => {
+    console.log("Acceso a /ecommerce-data con token válido"); // Verificar si llega la solicitud
+
+    // Leer el archivo cart.json para obtener las categorías
+    fs.readFile(cartFilePath, 'utf-8', (err, cartData) => {
+        if (err) {
+            return res.status(500).json({ message: "Error al leer las categorías", error: err });
+        }
+
+        const categories = JSON.parse(cartData).categories;
+
+        // Leer todos los productos de la carpeta products
+        fs.readdir(productsFolderPath, (err, files) => {
+            if (err) {
+                return res.status(500).json({ message: "Error al leer los productos", error: err });
+            }
+
+            // Filtrar solo los archivos JSON (productos)
+            const productFiles = files.filter(file => file.endsWith('.json'));
+
+            // Leer cada archivo de producto y almacenarlos en un array
+            const productPromises = productFiles.map(file => {
+                return new Promise((resolve, reject) => {
+                    const productPath = path.join(productsFolderPath, file);
+
+                    fs.readFile(productPath, 'utf-8', (err, productData) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(JSON.parse(productData));
+                        }
+                    });
+                });
+            });
+
+            // Esperar que todos los productos se lean antes de enviar la respuesta
+            Promise.all(productPromises)
+                .then(products => {
+                    // Enviar los datos (categorías y productos) en la respuesta
+                    res.status(200).json({
+                        message: "Acceso permitido",
+                        categories: categories,
+                        products: products,
+                        user: req.user
+                    });
+                })
+                .catch(err => {
+                    res.status(500).json({ message: "Error al leer los productos", error: err });
+                });
+        });
+    });
+});
 
 app.get("/categories", (req, res) => {
     const data = readData();
