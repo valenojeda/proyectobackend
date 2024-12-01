@@ -8,6 +8,8 @@ const path = require("path");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const SECRET_KEY = "CLAVE SECRETA";
+require('dotenv').config();
+
 
 // Habilitar CORS para permitir peticiones desde otros orígenes
 app.use(cors());
